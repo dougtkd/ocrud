@@ -10,22 +10,37 @@ class ProductModel:
 
     Vale freezar que o Model JAMAIS acessa o banco de dados e não contém regra de negócio.. serve apenas para representar os dados do produto!
     """
-    def __init__(self):
+    def __init__(self, id, name, price, stock):
     """
     Construtor do produto! 
 
     -Vamos atribuir características que o produto deve ter: id, nome, preço
     """
         # TODO
-        # - Definir os atributos do produto!
-        pass
+        self.id = id
+        self.name = name
+        self.price = price
+        self.stock = stock
+        # - atributos definidos!
+
+    def toDict(self) -> dict:
+        """
+        Método que traduz o ProductModel em dicionário Python!
+        - pega o objeto e escreve as informações
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": self.price,
+            "stock": self.stock
+        }
 
     def toJson(self) -> str:
-    """
-    Esse método converte o ProductModel para uma string JSON!
+        """
+        Esse método converte o ProductModel para uma string JSON!
 
-    - retorna dados pela API
-    - gera logs
-    """
-        # o método toDict aqui transforma o objeto em um dicionário Python! 
+        - retorna dados pela API
+        - gera logs
+        """
+        # transforma as informações do dicionário em texto
         return json.dumps(self.toDict()) 
