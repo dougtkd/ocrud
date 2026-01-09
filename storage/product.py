@@ -39,13 +39,13 @@ class ProductStorage:
             sql = self.conexao.cursor() # criamos um objeto para executar os comandos SQL 
 
             # executa o comando SQL
-            #IF NOT EXISTS ajuda evitar erro se já existir tabela
+            #IF NOT EXISTS ajuda evitar erro se já existir tabela! E o id da tabela foi ajustado pra receber o ulid
             sql.execute("""
                 CREATE TABLE IF NOT EXISTS products (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT,
-                    price REAL,
-                    stock INTEGER
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    stock INTEGER NOT NULL
                 )
             """ )
 
@@ -60,7 +60,7 @@ class ProductStorage:
             # retorna o erro pra camarada que chamou o método
             raise error     
 
-    def insert(self, product: ProductModel) -> int:
+    def insert(self, product: ProductModel) -> bool: # como o ULID já foi criado o papel do insert agora e validar true ou false agora
         """
         Método que insere produto no banco
         1. recebe um ProductModel
@@ -70,13 +70,13 @@ class ProductStorage:
             # TODO Insert product into database
             sql = self.conexao.cursor() # criamos objeto pra executar comando SQL
             sql.execute(
-                "INSERT INTO products (name, price, stock) VALUES (?, ?, ?)", # executa o INSERT usando (?), PLACEHOLDER marcador temporário
-                (product.name, product.price, product.stock)
+                "INSERT INTO products (id, name, price, stock) VALUES (?, ?, ?, ?)", # executa o INSERT usando (?), PLACEHOLDER marcador temporário
+                (product.id, product.name, product.price, product.stock)
             )
             self.conexao.commit() # o commit faz a confirmação no banco
             
-            logging.debug(f"[PRODUCT-STORAGE] Product inserted with ID {sql.lastrowid}") #lastrowid é o atributo que vai salvar o ID do produto q acabou de ser gerado
-            return sql.lastrowid # retorna o ID pra quem chamou o método
+            logging.debug(f"[PRODUCT-STORAGE] Product inserted with ULID {product.id}") #não vamos mais usar o atributo lastrowid, só precisamos saber se deu certo!
+            return True 
             
         except Exception as error:
             logging.error(f"[PRODUCT-STORAGE] Fail to insert product: {error}")
@@ -105,12 +105,9 @@ class ProductStorage:
             logging.error(f"[PRODUCT-STORAGE] Fail to get products: {error}")
             raise error
     
-    def getById(self, id: int) -> ProductModel:
+    def getById(self, id: int) -> ProductModel | None:
         """
-        Método que retorna um produto específico pelo id
-        1. recebe o id do produto
-        2. executa SELECT com WHERE id
-        3. Se não achar, retorna None
+        Agora esse método retorna um produto pelo id (ULID)
         """
         try:
             # TODO Retrieve product by ID from database
@@ -160,8 +157,7 @@ class ProductStorage:
     # TODO DELETE
     def delete(self, id: int) -> bool:
         """
-        Esse Método remove um produto do banco pelo ID
-        - retorna true se deu certo, false se não encontrou
+        Agora remove um produto pelo id(ULID)
         """
         try:
             sql = self.conexao.cursor() # criamos o objeto que executa SQL

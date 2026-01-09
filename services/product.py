@@ -1,3 +1,4 @@
+from ulid import ULID # importa a classe ULID da biblioteca ulid
 import logging # importa biblioteca padrão para registrar logs
 import traceback # importa para salvar o erro completo, entender em qual linha e qual chamada o erro aconteceu
 
@@ -44,10 +45,14 @@ class ProductService:
             if prod.stock < 0: #verificação se o estoque é negativo
                 raise ValueError("Estoque inválido!") # se for, para e retorna erro
 
-            prod_id = self.storage.insert(prod) # salva o objeto prod no banco pelo método insert
+            my_ulid = ULID() # cria um objeto ULID na variável my_ulid
+            prod.id = str(my_ulid) # aqui o str ta convertendo o objeto para texto
             
-            logging.debug(f"[PRODUCT-SERVICE] Insert Product: {prod.toJson()}") # converte os dados do produto para o formato JSON
-            return prod_id # retorna o id 
+            logging.debug(f"[PRODUCT-SERVICE] Generated ULID: {prod.id}") # registra o ULID que acabou de ser gerado no produto
+            
+            self.storage.insert(prod) # chama o método insert do storage que recebe prod q já tem um ulid gerado
+            
+            return prod.id # retorna o ulid
             
         except Exception as error:
             # Exceção que pega todo erro ocorrido no processo
