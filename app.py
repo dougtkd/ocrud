@@ -43,17 +43,17 @@ logging.basicConfig(
 # Avisa pro usuário que o programa carregou e está pronto
 print("Exiting...")
 
-def makeResponse(msg: str, args: dict = {}):
-"""
-Essa função cria uma resposta padrão para API!
+def make_response(msg: str, args: dict = {}):
+    """
+    Essa função cria uma resposta padrão para API!
 
-- message: de fato uma mensagem
-- timestamp: retorna a data e a hora da resposta
+    - message: de fato uma mensagem
+    - timestamp: retorna a data e a hora da resposta
 
-parametro msg recebe string 
-parametro arg recebe um dicionário vazio
+    parametro msg recebe string 
+    parametro arg recebe um dicionário vazio
 
-"""
+    """
 
     # Resposta
     ret = {
@@ -71,8 +71,6 @@ parametro arg recebe um dicionário vazio
 def insert():
     """
     Rota responsável por cadastrar novo produto.
-
-    Fluxo:
     - ler os dados enviados JSON
     - verifica se os dados são válidos
     - criar o produto
@@ -80,25 +78,33 @@ def insert():
     - retorna o resultado para o usuário
     """
     try:
-        # Armazena o ID gerado pelo banco!
-        id = ""
         # TODO
-        # - fazer ler o request.json
-        # - validar nome e preço
-        # - criar ProductModel
-        # - chamar o service.insert do produto
+        payload = request.json
 
-        # log para verificar o que chegou na requisição
-        logging.debug(f"[PRODUCT-API] Request data: {request.data}")
+        if not payload:
+            raise ValueError("JSON inválido!")
 
-        # se não implementar, retorna o not_implemented
-        return makeResponse(f"All products"), HTTPStatus.NOT_IMPLEMENTED
-        
+        produto = ProductModel(
+            id=None,
+            name=payload.get("name"),
+            price=payload.get("price"),
+            stock=payload.get("stock", 0)
+        )
+       
+        prod_id = service.insert(produto)
+
+        logging.debug(f"[PRODUCT-API] Product created with ID={prod_id}")
+
+        return make_response(
+            "Product created",
+            {"id": prod_id}
+        ), HTTPStatus.CREATED
+       
     except Exception as error: 
         # a exceção que vai ser retornada se der algum B.O. durante o processamento
         errorMsg = f"Error to try process request: Invalid request {error}"
         logging.error(f"[PRODUCT-API] {errorMsg}")
-        return makeResponse(errorMsg), HTTPStatus.BAD_REQUEST
+        return make_response(errorMsg), HTTPStatus.BAD_REQUEST
 
 @app.route("/products", methods = ['GET'])
 def get():
@@ -108,20 +114,19 @@ def get():
     Essa rota não está recebendo parâmetros, para apenas retornar a lista completa dos produtos!
     """
     
-    ret = {} # Variável ainda não necessária na rota! Mas o intuito dela é armazenar o retorno do serviço.
-    
     try:
         # TODO
-        # - Acho que temos que chamar o método service.get() aqui
-        # - converter produtos para dict/json
-        # - Retornar a lista de produtos
-        
-        return makeResponse(f"All products"), HTTPStatus.NOT_IMPLEMENTED
+        produtos = service.get()
+
+        return make_response(
+            "All products", {"payload": [p.toDict() for p in produtos]}
+        ), HTTPStatus.OK
+                
     except Exception as error: 
         # Essa exceção pega todo erro inesperado enquanto processa!
         errorMsg = f"Error to try get all products: {error}"
         logging.error(f"[PRODUCT-API] {errorMsg}")
-        return makeResponse(errorMsg), HTTPStatus.INTERNAL_SERVER_ERROR    
+        return make_response(errorMsg), HTTPStatus.INTERNAL_SERVER_ERROR    
 
 @app.route("/products/<id>", methods = ['GET'])
 def getById(id):
@@ -130,28 +135,70 @@ def getById(id):
 
     O ID do produto vem pela URL da rota (PATH).
     """
-    # variável que vai salvar o produto encontrado.
-    ret = {}
+    
     try:
         # TODO:
-        # - Acho que devemos validar o ID aqui
-        # - chamar o service.getByID(id)
-        # - retornar o produto encontrado
+        produto = service.getById(int(id))
 
-        # ret.toDict só vai significar algo uando ret for um objeto ProductModel!
-        return makeResponse(f"Product id {id}", { "data": ret.toDict() }), HTTPStatus.NOT_IMPLEMENTED
+        if not produto:
+            return make_response("Produto não encontrado!"), HTTPStatus.NOT_FOUND
+
+        return make_response(f"Product id {id}", {"payload": produto.toDict()}), HTTPStatus.OK
+        
     except Exception as error: 
         errorMsg = f"Error to try get product id {id}: {error}"
         logging.error(f"[PRODUCT-API] {errorMsg}")
-        return makeResponse(errorMsg), HTTPStatus.INTERNAL_SERVER_ERROR    
+        return make_response(errorMsg), HTTPStatus.INTERNAL_SERVER_ERROR
 
 # TODO UPDATE
-    # - Rota para atualizar um produto
-    # - URL PUT /products/id
-    # - Receber dados
-    # - Atualizar o produto já existente
+@app.route("/products/<id>", methods=['PUT'])
+def update(id):
+    """
+    Rota que atualiza um produto 
+
+    
+    """
+    try:
+        payload = request.json
+
+        produto = ProductModel(
+            id=int(id),
+            name=payload.get("name"),
+            price=payload.get("price"),
+            stock=payload.get("stock")
+        )
+
+        atualiza = service.update(produto)
+
+        if not atualiza:
+            return make_response("Produto não encontrado!"), HTTPStatus.NOT_FOUND
+
+        return make_response("Produto atualizado!"), HTTPStatus.OK
+
+    except Exception as error:
+        logging.error(f"[PRODUCT-API] {error}")
+        return make_response(str(error)), HTTPStatus.BAD_REQUEST
     
 # TODO DELETE   
-    # - Rota para remover um produto
-    # - URL DELETE /products/id
-    # - excluir produto do banco 
+@app.route("/products/<id>", methods=['DELETE'])
+def delete(id):
+    """
+    Rota que deleta um produto
+
+    
+    """
+    try:
+        remove = service.delete(int(id))
+
+        if not remove:
+            return make_response("Produto não encontrado!"), HTTPStatus.NOT_FOUND
+
+        return make_response("Produto deletado!"), HTTPStatus.OK
+
+    except Exception as error:
+        logging.error(f"[PRODUCT-API] {error}")
+        return make_response(str(error)), HTTPStatus.BAD_REQUEST
+
+if __name__ == "__main__":
+    print("App Ready and Running!")
+    app.run(debug=True, host='0.0.0.0', port=5000)

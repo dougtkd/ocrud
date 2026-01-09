@@ -11,11 +11,11 @@ class ProductModel:
     Vale freezar que o Model JAMAIS acessa o banco de dados e não contém regra de negócio.. serve apenas para representar os dados do produto!
     """
     def __init__(self, id, name, price, stock):
-    """
-    Construtor do produto! 
+        """
+        Construtor do produto! 
 
-    -Vamos atribuir características que o produto deve ter: id, nome, preço
-    """
+        -Vamos atribuir características que o produto deve ter: id, nome, preço
+        """
         # TODO
         self.id = id
         self.name = name
